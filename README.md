@@ -1,4 +1,11 @@
-Onepoint Hackers:
+**Description & Motivation** 
+
+The following project is designed to address a critical challenge in today's rapidly evolving job market—how businesses can effectively integrate AI into their workforce while ensuring employees remain skilled and adaptable. 
+The motivation behind this project stems from the growing gap between AI adoption and workforce readiness. While 97% of executives acknowledge the transformative potential of generative AI, only 5% of companies are reskilling their employees at scale. This gap poses a significant risk, as organizations may struggle to harness AI’s full potential due to workforce skill mismatches.
+The idea behind TalentForge is to develop an AI-driven agent that helps businesses simulate workforce transformations, optimize reskilling strategies, and guide leadership in making data-driven talent decisions. A key focus is on providing recommendations for skill-related training opportunities, ensuring employees receive targeted upskilling paths aligned with industry needs. By leveraging real-time labor market intelligence, advanced analytics, and interactive dashboards, TalentForge empowers companies to stay ahead of market shifts and ensure a smooth transition into an AI-augmented workplace. 
+The project incorporates technologies such as Gemini 2.0 Flash, Vertex AI, and LangGraph, ensuring a robust and scalable approach to workforce development. Ultimately, the motivation is to reduce skill gaps, enhance job transition planning, and maximize productivity through strategic AI adoption, making businesses and employees future-ready.
+
+Onepoint Team of Hackers:
 
 > Charlotte Gosset-Grainville
 
