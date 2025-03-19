@@ -8,7 +8,7 @@ Onepoint Hackers:
 
 
 
-A RAG agent using Vertex AI Search and LangGraph for document retrieval and Q&A
+A workflow based on agents following LangGraph framework and many other tools to build an extensive and dynamic HR reporting working as HR advisor tools (following the recent advancement made on deep search techniques) 
 
 Agent generated with [`googleCloudPlatform/agent-starter-pack`](https://github.com/GoogleCloudPlatform/agent-starter-pack)
 
