@@ -95,24 +95,6 @@ if query:
     trends = final_state["trends"]
     trends_df = pd.DataFrame(trends)
     st.dataframe(trends_df)
-    # trend1, trend2, trend3, trend4 = st.columns(4)
-    # with trend1:
-    #     st.write("**Skill Name**")
-    # with trend2:
-    #     st.write("**Demand**")
-    # with trend3:
-    #     st.write("**Growth Rate**")
-    # with trend4:
-    #     st.write("**Category**")
-    # for trend in trends:
-    #     with trend1:
-    #         st.write(trend["skill_name"])
-    #     with trend2:
-    #         st.write(trend["demand_level"])
-    #     with trend3:
-    #         st.write(trend["growth_rate"])
-    #     with trend4:
-    #         st.write(trend["category"])
 
     st.subheader("Visualizations:")
     
