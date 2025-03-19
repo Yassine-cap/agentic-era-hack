@@ -1214,6 +1214,86 @@ wheels = [
 ]
 
 [[package]]
+name = "hack-agent-genai-vertex"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "google-cloud-aiplatform", extra = ["evaluation", "langchain", "reasoningengine"] },
+    { name = "google-cloud-logging" },
+    { name = "langchain" },
+    { name = "langchain-community" },
+    { name = "langchain-core" },
+    { name = "langchain-google-community", extra = ["vertexaisearch"] },
+    { name = "langchain-google-vertexai" },
+    { name = "langchain-openai" },
+    { name = "langgraph" },
+    { name = "loguru" },
+    { name = "opentelemetry-exporter-gcp-trace" },
+    { name = "seaborn" },
+    { name = "traceloop-sdk" },
+]
+
+[package.optional-dependencies]
+jupyter = [
+    { name = "jupyter" },
+]
+lint = [
+    { name = "codespell" },
+    { name = "mypy" },
+    { name = "ruff" },
+    { name = "types-pyyaml" },
+    { name = "types-requests" },
+]
+streamlit = [
+    { name = "extra-streamlit-components" },
+    { name = "streamlit" },
+    { name = "streamlit-extras" },
+    { name = "streamlit-feedback" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "nest-asyncio" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "codespell", marker = "extra == 'lint'", specifier = "~=2.2.0" },
+    { name = "extra-streamlit-components", marker = "extra == 'streamlit'", specifier = "~=0.1.71" },
+    { name = "google-cloud-aiplatform", extras = ["evaluation", "langchain", "reasoningengine"], specifier = "~=1.81.0" },
+    { name = "google-cloud-logging", specifier = "~=3.11.4" },
+    { name = "jupyter", marker = "extra == 'jupyter'", specifier = "~=1.0.0" },
+    { name = "langchain", specifier = "~=0.3.14" },
+    { name = "langchain-community", specifier = "~=0.3.17" },
+    { name = "langchain-core", specifier = "~=0.3.9" },
+    { name = "langchain-google-community", extras = ["vertexaisearch"], specifier = "~=2.0.2" },
+    { name = "langchain-google-vertexai", specifier = "~=2.0.7" },
+    { name = "langchain-openai", specifier = "~=0.3.5" },
+    { name = "langgraph", specifier = "~=0.2.63" },
+    { name = "loguru", specifier = ">=0.7.3" },
+    { name = "mypy", marker = "extra == 'lint'", specifier = "~=1.15.0" },
+    { name = "opentelemetry-exporter-gcp-trace", specifier = "~=1.9.0" },
+    { name = "ruff", marker = "extra == 'lint'", specifier = ">=0.4.6" },
+    { name = "seaborn", specifier = ">=0.13.2" },
+    { name = "streamlit", marker = "extra == 'streamlit'", specifier = "~=1.42.0" },
+    { name = "streamlit-extras", marker = "extra == 'streamlit'", specifier = "~=0.4.3" },
+    { name = "streamlit-feedback", marker = "extra == 'streamlit'", specifier = "~=0.1.3" },
+    { name = "traceloop-sdk", specifier = "~=0.38.7" },
+    { name = "types-pyyaml", marker = "extra == 'lint'", specifier = "~=6.0.12.20240917" },
+    { name = "types-requests", marker = "extra == 'lint'", specifier = "~=2.32.0.20240914" },
+]
+provides-extras = ["streamlit", "jupyter", "lint"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "nest-asyncio", specifier = ">=1.6.0" },
+    { name = "pytest", specifier = ">=8.3.4" },
+    { name = "pytest-asyncio", specifier = ">=0.23.8" },
+]
+
+[[package]]
 name = "htbuilder"
 version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2016,79 +2096,16 @@ wheels = [
 ]
 
 [[package]]
-name = "hack_agent_genai_vertex"
-version = "0.1.0"
-source = { editable = "." }
+name = "loguru"
+version = "0.7.3"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "google-cloud-aiplatform", extra = ["evaluation", "langchain", "reasoningengine"] },
-    { name = "google-cloud-logging" },
-    { name = "langchain" },
-    { name = "langchain-community" },
-    { name = "langchain-core" },
-    { name = "langchain-google-community", extra = ["vertexaisearch"] },
-    { name = "langchain-google-vertexai" },
-    { name = "langchain-openai" },
-    { name = "langgraph" },
-    { name = "opentelemetry-exporter-gcp-trace" },
-    { name = "traceloop-sdk" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "win32-setctime", marker = "sys_platform == 'win32'" },
 ]
-
-[package.optional-dependencies]
-jupyter = [
-    { name = "jupyter" },
-]
-lint = [
-    { name = "codespell" },
-    { name = "mypy" },
-    { name = "ruff" },
-    { name = "types-pyyaml" },
-    { name = "types-requests" },
-]
-streamlit = [
-    { name = "extra-streamlit-components" },
-    { name = "streamlit" },
-    { name = "streamlit-extras" },
-    { name = "streamlit-feedback" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "nest-asyncio" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "codespell", marker = "extra == 'lint'", specifier = "~=2.2.0" },
-    { name = "extra-streamlit-components", marker = "extra == 'streamlit'", specifier = "~=0.1.71" },
-    { name = "google-cloud-aiplatform", extras = ["evaluation", "langchain", "reasoningengine"], specifier = "~=1.81.0" },
-    { name = "google-cloud-logging", specifier = "~=3.11.4" },
-    { name = "jupyter", marker = "extra == 'jupyter'", specifier = "~=1.0.0" },
-    { name = "langchain", specifier = "~=0.3.14" },
-    { name = "langchain-community", specifier = "~=0.3.17" },
-    { name = "langchain-core", specifier = "~=0.3.9" },
-    { name = "langchain-google-community", extras = ["vertexaisearch"], specifier = "~=2.0.2" },
-    { name = "langchain-google-vertexai", specifier = "~=2.0.7" },
-    { name = "langchain-openai", specifier = "~=0.3.5" },
-    { name = "langgraph", specifier = "~=0.2.63" },
-    { name = "mypy", marker = "extra == 'lint'", specifier = "~=1.15.0" },
-    { name = "opentelemetry-exporter-gcp-trace", specifier = "~=1.9.0" },
-    { name = "ruff", marker = "extra == 'lint'", specifier = ">=0.4.6" },
-    { name = "streamlit", marker = "extra == 'streamlit'", specifier = "~=1.42.0" },
-    { name = "streamlit-extras", marker = "extra == 'streamlit'", specifier = "~=0.4.3" },
-    { name = "streamlit-feedback", marker = "extra == 'streamlit'", specifier = "~=0.1.3" },
-    { name = "traceloop-sdk", specifier = "~=0.38.7" },
-    { name = "types-pyyaml", marker = "extra == 'lint'", specifier = "~=6.0.12.20240917" },
-    { name = "types-requests", marker = "extra == 'lint'", specifier = "~=2.32.0.20240914" },
-]
-provides-extras = ["streamlit", "jupyter", "lint"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "nest-asyncio", specifier = ">=1.6.0" },
-    { name = "pytest", specifier = ">=8.3.4" },
-    { name = "pytest-asyncio", specifier = ">=0.23.8" },
+sdist = { url = "https://files.pythonhosted.org/packages/3a/05/a1dae3dffd1116099471c643b8924f5aa6524411dc6c63fdae648c4f1aca/loguru-0.7.3.tar.gz", hash = "sha256:19480589e77d47b8d85b2c827ad95d49bf31b0dcde16593892eb51dd18706eb6", size = 63559 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl", hash = "sha256:31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c", size = 61595 },
 ]
 
 [[package]]
@@ -4397,6 +4414,20 @@ wheels = [
 ]
 
 [[package]]
+name = "seaborn"
+version = "0.13.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "pandas" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/86/59/a451d7420a77ab0b98f7affa3a1d78a313d2f7281a57afb1a34bae8ab412/seaborn-0.13.2.tar.gz", hash = "sha256:93e60a40988f4d65e9f4885df477e2fdaff6b73a9ded434c1ab356dd57eefff7", size = 1457696 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/83/11/00d3c3dfc25ad54e731d91449895a79e4bf2384dc3ac01809010ba88f6d5/seaborn-0.13.2-py3-none-any.whl", hash = "sha256:636f8336facf092165e27924f223d3c62ca560b1f2bb5dff7ab7fad265361987", size = 294914 },
+]
+
+[[package]]
 name = "send2trash"
 version = "1.8.3"
 source = { registry = "https://pypi.org/simple" }
@@ -5090,6 +5121,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/56/fc/238c424fd7f4ebb25f8b1da9a934a3ad7c848286732ae04263661eb0fc03/widgetsnbextension-4.0.13.tar.gz", hash = "sha256:ffcb67bc9febd10234a362795f643927f4e0c05d9342c727b65d2384f8feacb6", size = 1164730 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/21/02/88b65cc394961a60c43c70517066b6b679738caf78506a5da7b88ffcb643/widgetsnbextension-4.0.13-py3-none-any.whl", hash = "sha256:74b2692e8500525cc38c2b877236ba51d34541e6385eeed5aec15a70f88a6c71", size = 2335872 },
+]
+
+[[package]]
+name = "win32-setctime"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083 },
 ]
 
 [[package]]
