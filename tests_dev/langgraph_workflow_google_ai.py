@@ -2,9 +2,11 @@ from langchain_google_vertexai import ChatVertexAI
 
 # Replace with your actual Google Cloud project ID
 project_id = "qwiklabs-gcp-02-2a44d1630c0c"
+MODEL_ID = "gemini-2.0-flash-001"
 
 # Initialize the Vertex AI Chat model
 chat_agent = ChatVertexAI(
+    MODEL= MODEL_ID,
     project=project_id,
     temperature=0.7,
     max_output_tokens=256

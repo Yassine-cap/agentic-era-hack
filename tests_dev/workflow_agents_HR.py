@@ -10,16 +10,18 @@ import matplotlib.pyplot as plt
 # Data visualization libraries
 import pandas as pd
 import seaborn as sns
+import numpy as np
 from langchain_community.tools import TavilySearchResults
 from langchain_core.messages import HumanMessage
 # Use ChatVertexAI instead of ChatOpenAI
 from langchain_google_vertexai import ChatVertexAI
 # LangGraph imports
-from langgraph.graph import END, StateGraph
+from langgraph.graph import START, END, StateGraph
 
 # Set your API keys and project id
-os.environ["TAVILY_API_KEY"] = "your-tavily-api-key"
-PROJECT_ID = "YOUR_PROJECT_ID"  # Replace with your Google Cloud project ID
+os.environ["TAVILY_API_KEY"] = "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"
+PROJECT_ID = "qwiklabs-gcp-02-2a44d1630c0c"  # Replace with your Google Cloud project ID
+MODEL_ID = "gemini-2.0-flash-001"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -39,7 +41,7 @@ class WorkforceState(TypedDict):
 # Initialize the LLM using ChatVertexAI
 llm = ChatVertexAI(
     project=PROJECT_ID,
-    model="chat-bison",  # Use the appropriate model name in your project
+    model=MODEL_ID,  # Use the appropriate model name in your project
     temperature=0
 )
 
@@ -220,17 +222,38 @@ def create_visualizations(state: WorkforceState) -> WorkforceState:
     })
     
     # 2. Scatter plot of demand vs growth
+    # Function to determine offset dynamically
+    def get_offset(demand, growth):
+        """Adjust text position dynamically based on quadrant"""
+        offset_x = 0.2 if demand < 8 else -0.2  # Move right if demand is low, left otherwise
+        offset_y = 0.2 if growth < 2 else -0.2  # Move up if growth is low, down otherwise
+        return offset_x, offset_y
+    
+    
     plt.figure(figsize=(10, 8))
     sns.scatterplot(x="demand_level", y="growth_rate", hue="category", size="demand_level", 
                     sizes=(50, 200), alpha=0.7, data=df)
     
     for i, row in df.iterrows():
-        plt.text(row['demand_level'], row['growth_rate'], row['skill_name'], fontsize=9, ha='center', va='center')
+        offset_x, offset_y = get_offset(row['demand_level'], row['growth_rate'])
+        # Apply a small jitter to avoid perfect overlaps
+        jitter_x = np.random.uniform(-0.1, 0.1)
+        jitter_y = np.random.uniform(-0.1, 0.1)
+        plt.text(
+            row['demand_level'] + jitter_x + offset_x, 
+            row['growth_rate'] + jitter_y + offset_y, 
+            row['skill_name'], 
+            fontsize=9, fontweight='bold',
+            ha='left' if offset_x > 0 else 'right',  # Adjust horizontal alignment
+            va='bottom' if offset_y > 0 else 'top'  # Adjust vertical alignment
+        )
+        # plt.text(row['demand_level']+ 0.2, row['growth_rate']+ 0.2, row['skill_name'], fontsize=12, fontweight='bold', ha='left', va='bottom')
     
-    plt.title("Skills Positioning: Demand vs Growth")
-    plt.xlabel("Current Demand Level (1-10)")
-    plt.ylabel("Growth Rate (-5 to +5)")
+    plt.title("Skills Positioning: Demand vs Growth", fontsize=14, fontweight='bold')
+    plt.xlabel("Current Demand Level (1-10)", fontsize=12)
+    plt.ylabel("Growth Rate (-5 to +5)", fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.7)
+    plt.legend(title="Category", fontsize=10)
     plt.tight_layout()
     
     buf2 = BytesIO()
@@ -338,6 +361,7 @@ def generate_report(state: WorkforceState) -> WorkforceState:
 workflow = StateGraph(WorkforceState)
 
 # Add nodes to the workflow
+
 workflow.add_node("search_data", collect_search_data)
 workflow.add_node("analyze_trends", analyze_trends)
 workflow.add_node("aggregate_data", aggregate_data)
@@ -345,6 +369,7 @@ workflow.add_node("create_visualizations", create_visualizations)
 workflow.add_node("generate_report", generate_report)
 
 # Define the execution edges
+workflow.add_edge(START, "search_data")
 workflow.add_edge("search_data", "analyze_trends")
 workflow.add_edge("analyze_trends", "aggregate_data")
 workflow.add_edge("aggregate_data", "create_visualizations")
@@ -373,22 +398,22 @@ app = workflow.compile()
 # ----------------------------
 # Main Testing Block
 # ----------------------------
-if __name__ == "__main__":
-    # Define an initial state with a sample query (modify the query as needed)
-    initial_state: WorkforceState = {
-        "query": "data science",
-        "search_results": [],
-        "trends": [],
-        "aggregated_data": {},
-        "visualizations": [],
-        "report": "",
-        "status": "initialized",
-        "error": None
-    }
+# if __name__ == "__main__":
+#     # Define an initial state with a sample query (modify the query as needed)
+#     initial_state: WorkforceState = {
+#         "query": "data science",
+#         "search_results": [],
+#         "trends": [],
+#         "aggregated_data": {},
+#         "visualizations": [],
+#         "report": "",
+#         "status": "initialized",
+#         "error": None
+#     }
     
-    # Run the workflow
-    final_state = app.invoke(initial_state)
+#     # Run the workflow
+#     final_state = app.invoke(initial_state)
     
-    # Print the final state in a readable JSON format
-    print("Final Workflow State:")
-    print(json.dumps(final_state, indent=2))
+#     # Print the final state in a readable JSON format
+#     print("Final Workflow State:")
+#     print(json.dumps(final_state, indent=2))
