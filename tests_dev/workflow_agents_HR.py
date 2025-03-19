@@ -1,0 +1,394 @@
+import base64
+import json
+import logging
+import os
+import re
+from io import BytesIO
+from typing import Any, Dict, List, Optional, TypedDict
+
+import matplotlib.pyplot as plt
+# Data visualization libraries
+import pandas as pd
+import seaborn as sns
+from langchain_community.tools import TavilySearchResults
+from langchain_core.messages import HumanMessage
+# Use ChatVertexAI instead of ChatOpenAI
+from langchain_google_vertexai import ChatVertexAI
+# LangGraph imports
+from langgraph.graph import END, StateGraph
+
+# Set your API keys and project id
+os.environ["TAVILY_API_KEY"] = "your-tavily-api-key"
+PROJECT_ID = "YOUR_PROJECT_ID"  # Replace with your Google Cloud project ID
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Define the state structure
+class WorkforceState(TypedDict):
+    query: str
+    search_results: List[Dict]
+    trends: List[Dict]
+    aggregated_data: Dict
+    visualizations: List[Dict]
+    report: str
+    status: str
+    error: Optional[str]
+
+# Initialize the LLM using ChatVertexAI
+llm = ChatVertexAI(
+    project=PROJECT_ID,
+    model="chat-bison",  # Use the appropriate model name in your project
+    temperature=0
+)
+
+# Initialize Tavily Search Tool
+tavily_search = TavilySearchResults(
+    max_results=10,
+    include_domains=["linkedin.com", "indeed.com", "glassdoor.com", "weforum.org", "bls.gov"],
+    exclude_domains=["pinterest.com", "facebook.com"]
+)
+
+def merge_state(state: WorkforceState, updates: Dict[str, Any]) -> WorkforceState:
+    """
+    Helper function to merge new updates into the existing state.
+    """
+    state.update(updates)
+    return state
+
+# ----------------------------
+# Step 1: Collect Search Data
+# ----------------------------
+def collect_search_data(state: WorkforceState) -> WorkforceState:
+    """
+    Perform a search for global workforce trends based on the query in the state.
+    """
+    if state.get("error"):
+        return state  # Skip processing if an error exists
+
+    query = state["query"]
+    search_query = f"latest global workforce trends for {query} skills demand statistics"
+    
+    try:
+        search_results = tavily_search.invoke(search_query)
+        logger.info("Search completed successfully.")
+        return merge_state(state, {"search_results": search_results, "status": "search_completed"})
+    except Exception as e:
+        logger.error("Search failed: %s", str(e))
+        return merge_state(state, {"error": str(e), "status": "search_failed"})
+
+# ----------------------------
+# Step 2: Analyze Trends
+# ----------------------------
+def analyze_trends(state: WorkforceState) -> WorkforceState:
+    """
+    Analyze search results to identify top in-demand skills.
+    """
+    if state.get("error"):
+        return state
+
+    search_results = state.get("search_results", [])
+    query = state["query"]
+    
+    # Extract content from search results (if available)
+    content_texts = [result["content"] for result in search_results if "content" in result]
+    if not content_texts:
+        error_msg = "No content available from search results."
+        logger.error(error_msg)
+        return merge_state(state, {"error": error_msg, "status": "trend_analysis_failed"})
+        
+    content_combined = "\n\n".join(content_texts)
+    truncated_content = content_combined[:8000]  # Limit content length
+    
+    trend_prompt = f"""
+    Based on the following data sources about global workforce trends, identify the top 15 most in-demand skills related to {query}.
+    
+    DATA SOURCES:
+    {truncated_content}
+    
+    Analyze this information and provide:
+    1. The top 15 skills in JSON format
+    2. For each skill include: 
+       - "skill_name": The name of the skill
+       - "demand_level": A numerical score from 1-10 indicating current demand
+       - "growth_rate": A numerical score from -5 to 5 indicating growth trajectory
+       - "category": The category this skill belongs to (e.g., technical, soft skill, domain knowledge)
+    
+    Format your response as a valid JSON list of objects, nothing else.
+    """
+    
+    try:
+        response = llm.invoke([HumanMessage(content=trend_prompt)])
+        response_text = response.content
+        
+        # Extract JSON content using regex
+        json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
+        json_str = json_match.group(0) if json_match else response_text
+        
+        trends = json.loads(json_str)
+        logger.info("Trend analysis completed successfully.")
+        return merge_state(state, {"trends": trends, "status": "trends_analyzed"})
+    except Exception as e:
+        logger.error("Trend analysis failed: %s", str(e))
+        return merge_state(state, {"error": f"Error analyzing trends: {str(e)}", "status": "trend_analysis_failed"})
+
+# ----------------------------
+# Step 3: Aggregate Data
+# ----------------------------
+def aggregate_data(state: WorkforceState) -> WorkforceState:
+    """
+    Aggregate trend data by categorizing skills and computing statistics.
+    """
+    if state.get("error"):
+        return state
+
+    trends = state.get("trends", [])
+    if not trends:
+        error_msg = "No trends data available to aggregate."
+        logger.error(error_msg)
+        return merge_state(state, {"error": error_msg, "status": "aggregation_failed"})
+    
+    # Group skills by categories
+    categories = {}
+    for skill in trends:
+        category = skill.get("category", "unknown")
+        categories.setdefault(category, []).append(skill)
+    
+    aggregated_data = {
+        "categories": {},
+        "overall_stats": {
+            "total_skills": len(trends),
+            "avg_demand": sum(s.get("demand_level", 0) for s in trends) / len(trends),
+            "avg_growth": sum(s.get("growth_rate", 0) for s in trends) / len(trends)
+        }
+    }
+    
+    for category, skills in categories.items():
+        avg_demand = sum(s.get("demand_level", 0) for s in skills) / len(skills)
+        avg_growth = sum(s.get("growth_rate", 0) for s in skills) / len(skills)
+        
+        aggregated_data["categories"][category] = {
+            "skills": sorted(skills, key=lambda x: x.get("demand_level", 0), reverse=True),
+            "avg_demand": avg_demand,
+            "avg_growth": avg_growth,
+            "count": len(skills)
+        }
+    
+    logger.info("Data aggregation completed successfully.")
+    return merge_state(state, {"aggregated_data": aggregated_data, "status": "data_aggregated"})
+
+# ----------------------------
+# Step 4: Create Data Visualizations
+# ----------------------------
+def create_visualizations(state: WorkforceState) -> WorkforceState:
+    """
+    Create visualizations based on trends and aggregated data.
+    """
+    if state.get("error"):
+        return state
+
+    aggregated_data = state.get("aggregated_data", {})
+    trends = state.get("trends", [])
+    if not trends:
+        error_msg = "No trends data available for visualization."
+        logger.error(error_msg)
+        return merge_state(state, {"error": error_msg, "status": "visualization_failed"})
+    
+    visualizations = []
+    
+    # Create DataFrame from trends data
+    df = pd.DataFrame(trends)
+    
+    # 1. Bar chart of top skills by demand
+    top_skills = df.sort_values(by="demand_level", ascending=False).head(10)
+    plt.figure(figsize=(12, 6))
+    sns.barplot(x="demand_level", y="skill_name", data=top_skills, palette="viridis")
+    plt.title("Top 10 Skills by Demand Level")
+    plt.tight_layout()
+    
+    buf1 = BytesIO()
+    plt.savefig(buf1, format='png')
+    buf1.seek(0)
+    img_base64_1 = base64.b64encode(buf1.read()).decode('utf-8')
+    plt.close()
+    
+    visualizations.append({
+        "type": "image",
+        "title": "Top 10 Skills by Demand Level",
+        "data": img_base64_1
+    })
+    
+    # 2. Scatter plot of demand vs growth
+    plt.figure(figsize=(10, 8))
+    sns.scatterplot(x="demand_level", y="growth_rate", hue="category", size="demand_level", 
+                    sizes=(50, 200), alpha=0.7, data=df)
+    
+    for i, row in df.iterrows():
+        plt.text(row['demand_level'], row['growth_rate'], row['skill_name'], fontsize=9, ha='center', va='center')
+    
+    plt.title("Skills Positioning: Demand vs Growth")
+    plt.xlabel("Current Demand Level (1-10)")
+    plt.ylabel("Growth Rate (-5 to +5)")
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    
+    buf2 = BytesIO()
+    plt.savefig(buf2, format='png')
+    buf2.seek(0)
+    img_base64_2 = base64.b64encode(buf2.read()).decode('utf-8')
+    plt.close()
+    
+    visualizations.append({
+        "type": "image",
+        "title": "Skills Positioning: Demand vs Growth",
+        "data": img_base64_2
+    })
+    
+    # 3. Heatmap of categories
+    categories = aggregated_data.get("categories", {})
+    cat_data = {
+        cat: {
+            "avg_demand": data.get("avg_demand", 0), 
+            "avg_growth": data.get("avg_growth", 0), 
+            "count": data.get("count", 0)
+        } for cat, data in categories.items()
+    }
+    
+    cat_df = pd.DataFrame(cat_data).T
+    
+    plt.figure(figsize=(10, 6))
+    sns.heatmap(cat_df, annot=True, cmap="YlGnBu", fmt=".2f")
+    plt.title("Category Analysis: Demand, Growth and Skill Count")
+    plt.tight_layout()
+    
+    buf3 = BytesIO()
+    plt.savefig(buf3, format='png')
+    buf3.seek(0)
+    img_base64_3 = base64.b64encode(buf3.read()).decode('utf-8')
+    plt.close()
+    
+    visualizations.append({
+        "type": "image",
+        "title": "Category Analysis",
+        "data": img_base64_3
+    })
+    
+    logger.info("Visualizations created successfully.")
+    return merge_state(state, {"visualizations": visualizations, "status": "visualizations_created"})
+
+# ----------------------------
+# Step 5: Generate Report
+# ----------------------------
+def generate_report(state: WorkforceState) -> WorkforceState:
+    """
+    Generate a comprehensive HR workforce trends report.
+    """
+    if state.get("error"):
+        return state
+
+    query = state["query"]
+    trends = state.get("trends", [])
+    aggregated_data = state.get("aggregated_data", {})
+    
+    report_prompt = f"""
+    Generate a comprehensive HR workforce trends report for skills related to "{query}" based on the following data:
+    
+    TRENDS DATA:
+    {json.dumps(trends, indent=2)}
+    
+    AGGREGATED DATA:
+    {json.dumps(aggregated_data, indent=2)}
+    
+    Structure the report with these sections:
+    
+    1. EXECUTIVE SUMMARY
+       - Provide a concise overview of the key findings about {query} skills in the current global workforce.
+    
+    2. MARKET OVERVIEW
+       - Analyze the overall state of demand for {query} skills, including general trends and observations.
+    
+    3. TOP SKILLS ANALYSIS
+       - Break down the most in-demand skills, their growth trajectories, and relevance.
+    
+    4. CATEGORY INSIGHTS
+       - Analyze each skill category, highlighting strengths and weaknesses in the market.
+    
+    5. STRATEGIC RECOMMENDATIONS
+       - Provide actionable recommendations for HR professionals based on these findings:
+         - Hiring strategy recommendations
+         - Training and development focus areas
+         - Competitive positioning insights
+    
+    Format this as a professional report with clear markdown headings, bullet points where appropriate, and data-driven insights throughout.
+    """
+    
+    try:
+        response = llm.invoke([HumanMessage(content=report_prompt)])
+        report = response.content
+        logger.info("Report generated successfully.")
+        return merge_state(state, {"report": report, "status": "report_generated"})
+    except Exception as e:
+        logger.error("Report generation failed: %s", str(e))
+        return merge_state(state, {"error": f"Error generating report: {str(e)}", "status": "report_generation_failed"})
+
+# ----------------------------
+# Build the Workflow Graph
+# ----------------------------
+workflow = StateGraph(WorkforceState)
+
+# Add nodes to the workflow
+workflow.add_node("search_data", collect_search_data)
+workflow.add_node("analyze_trends", analyze_trends)
+workflow.add_node("aggregate_data", aggregate_data)
+workflow.add_node("create_visualizations", create_visualizations)
+workflow.add_node("generate_report", generate_report)
+
+# Define the execution edges
+workflow.add_edge("search_data", "analyze_trends")
+workflow.add_edge("analyze_trends", "aggregate_data")
+workflow.add_edge("aggregate_data", "create_visualizations")
+workflow.add_edge("create_visualizations", "generate_report")
+workflow.add_edge("generate_report", END)
+
+# Add conditional error handling edges
+def handle_errors(state: WorkforceState) -> str:
+    return "handle_error" if state.get("error") else "continue"
+
+workflow.add_conditional_edges(
+    "search_data",
+    handle_errors,
+    {"handle_error": END, "continue": "analyze_trends"}
+)
+
+workflow.add_conditional_edges(
+    "analyze_trends",
+    handle_errors,
+    {"handle_error": END, "continue": "aggregate_data"}
+)
+
+# Compile the workflow into an application instance
+app = workflow.compile()
+
+# ----------------------------
+# Main Testing Block
+# ----------------------------
+if __name__ == "__main__":
+    # Define an initial state with a sample query (modify the query as needed)
+    initial_state: WorkforceState = {
+        "query": "data science",
+        "search_results": [],
+        "trends": [],
+        "aggregated_data": {},
+        "visualizations": [],
+        "report": "",
+        "status": "initialized",
+        "error": None
+    }
+    
+    # Run the workflow
+    final_state = app.invoke(initial_state)
+    
+    # Print the final state in a readable JSON format
+    print("Final Workflow State:")
+    print(json.dumps(final_state, indent=2))
