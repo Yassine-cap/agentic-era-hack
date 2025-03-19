@@ -154,25 +154,35 @@ if query:
         st.subheader("Executive Summary:")
         st.markdown(executive_summary)
         
+        st.subheader("Industry Insights:")
         industry_insights = report_json.get("industry_insights", {})
         key_trends = industry_insights.get("key_trends", [])
+        
+        st.write("**Key Trends:**")
         key_trends_df = pd.DataFrame(key_trends)
+        key_trends_df.rename(columns={'title': 'Key Trend'}, inplace=True)
         st.dataframe(key_trends_df)
         
+        st.write("**Challenges:**")
         challenges = industry_insights.get("challenges", [])
         challenges_df = pd.DataFrame(challenges)
+        challenges_df.rename(columns={'title': 'Challenges'},
+                              inplace=True)
         st.dataframe(challenges_df)
         
         skills_demand = report_json.get("skills_demand", {})
         
         technical_skills = skills_demand.get("technical_skills", [])
         technical_skills_df = pd.DataFrame(technical_skills)
+        technical_skills_df.rename(columns={'name': 'Technical Skill'}, inplace=True)
         
         cognitive_skills = skills_demand.get("cognitive_skills", [])
         cognitive_skills_df = pd.DataFrame(cognitive_skills)
+        cognitive_skills_df.rename(columns={'name': 'Cognitive Skill'}, inplace=True)
         
         soft_skills = skills_demand.get("soft_skills", [])
         soft_skills_df = pd.DataFrame(soft_skills)
+        soft_skills_df.rename(columns={'name': 'Soft Skill'}, inplace=True)
         
         workforce_gaps = report_json.get("workforce_gaps", {})
         
@@ -197,20 +207,31 @@ if query:
         st.subheader("Reskilling Recommendations:")
         technical_reskilling = reskilling_recommendations.get("technical_skills", [])
         technical_reskilling_df = pd.DataFrame(technical_reskilling)
+        technical_reskilling_df.rename(columns={'name': 'Technical Skill'}, inplace=True)
+        st.write("**Technical Reskilling and training recommendations**")
         st.dataframe(technical_reskilling_df)
         
         cognitive_reskilling = reskilling_recommendations.get("cognitive_skills", [])
         cognitive_reskilling_df = pd.DataFrame(cognitive_reskilling)
+        cognitive_reskilling_df.rename(columns={'name': 'Cognitive Skill'}, inplace=True)
+        st.write("**Cognitive Reskilling and training recommendations**")
         st.dataframe(cognitive_reskilling_df)
         
         soft_reskilling = reskilling_recommendations.get("soft_skills", [])
         soft_reskilling_df = pd.DataFrame(soft_reskilling)
+        soft_reskilling_df.rename(columns={'name': 'Soft Skill'}, inplace=True)
+        st.write("**Soft Reskilling and training recommendations**")
         st.dataframe(soft_reskilling_df)
         
         conclusion = report_json.get("conclusion", "")
         st.subheader("Conclusion:")
-        st.warning(conclusion)
+        st.write(conclusion)
         
+        st.subheader("Sources:")
+        
+        sources = final_state["search_results"]
+        for source in sources:
+            st.markdown(f"- [{source['title']}]({source['url']})")
         
     except Exception as e:
         logger.error(f"Error parsing report: {e}")
