@@ -22,10 +22,11 @@ from langgraph.graph import START, END, StateGraph
 os.environ["TAVILY_API_KEY"] = "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"
 PROJECT_ID = "qwiklabs-gcp-02-2a44d1630c0c"  # Replace with your Google Cloud project ID
 MODEL_ID = "gemini-2.0-flash-001"
-
+THINKING_MODEL_ID = "gemini-2.0-flash-thinking-exp-01-21"
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from loguru import logger 
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(__name__)
 
 # Define the state structure
 class WorkforceState(TypedDict):
@@ -42,7 +43,13 @@ class WorkforceState(TypedDict):
 llm = ChatVertexAI(
     project=PROJECT_ID,
     model=MODEL_ID,  # Use the appropriate model name in your project
-    temperature=0
+    temperature=0.2
+)
+
+think_llm = ChatVertexAI(
+    project=PROJECT_ID,
+    model=MODEL_ID,  # Use the appropriate model name in your project
+    temperature=0.3
 )
 
 # Initialize Tavily Search Tool
@@ -313,41 +320,109 @@ def generate_report(state: WorkforceState) -> WorkforceState:
     query = state["query"]
     trends = state.get("trends", [])
     aggregated_data = state.get("aggregated_data", {})
+    trends_data = json.dumps(trends, indent=2)
+    aggregated_data = json.dumps(aggregated_data, indent=2)
     
-    report_prompt = f"""
-    Generate a comprehensive HR workforce trends report for skills related to "{query}" based on the following data:
-    
+    report_prompt = """\
+    Your goal is to offer actionable insights to help businesses transition smoothly with the GenAI revolution in the workforce.
+
+    Your task is to generate a **Personalized Reskilling Recommendation Report** related to "{query}" trends and workforce gaps.
+
+    Your report must be based on these trends and aggregated data:
+
     TRENDS DATA:
-    {json.dumps(trends, indent=2)}
-    
+    {trends_data}
+
     AGGREGATED DATA:
-    {json.dumps(aggregated_data, indent=2)}
-    
-    Structure the report with these sections:
-    
-    1. EXECUTIVE SUMMARY
-       - Provide a concise overview of the key findings about {query} skills in the current global workforce.
-    
-    2. MARKET OVERVIEW
-       - Analyze the overall state of demand for {query} skills, including general trends and observations.
-    
-    3. TOP SKILLS ANALYSIS
-       - Break down the most in-demand skills, their growth trajectories, and relevance.
-    
-    4. CATEGORY INSIGHTS
-       - Analyze each skill category, highlighting strengths and weaknesses in the market.
-    
-    5. STRATEGIC RECOMMENDATIONS
-       - Provide actionable recommendations for HR professionals based on these findings:
-         - Hiring strategy recommendations
-         - Training and development focus areas
-         - Competitive positioning insights
-    
-    Format this as a professional report with clear markdown headings, bullet points where appropriate, and data-driven insights throughout.
+    {aggregated_data}
+
+    The report must follow this structure:
+
+    {{
+        "executive_summary": "A concise summary of the report's purpose and key takeaways.",
+        "industry_insights": {{
+            "key_trends": [
+                {{
+                    "title": "Trend Title",
+                    "description": "Brief explanation of the trend's impact on the workforce."
+                }}
+            ],
+            "challenges": [
+                {{
+                    "title": "Challenge Title",
+                    "description": "Description of the business challenge related to AI and data."
+                }}
+            ]
+        }},
+        "skills_demand": {{
+            "technical_skills": [
+                {{
+                    "name": "Skill Name",
+                    "demand_level": 0-10,
+                    "growth_rate": 0-5
+                }}
+            ],
+            "cognitive_skills": [
+                {{
+                    "name": "Skill Name",
+                    "demand_level": 0-10,
+                    "growth_rate": 0-5
+                }}
+            ],
+            "soft_skills": [
+                {{
+                    "name": "Skill Name",
+                    "demand_level": 0-10,
+                    "growth_rate": 0-5
+                }}
+            ]
+        }},
+        "workforce_gaps": {{
+            "technical": "Analysis of gaps in technical skills",
+            "cognitive": "Analysis of gaps in cognitive skills",
+            "soft_skills": "Analysis of gaps in soft skills"
+        }},
+        "reskilling_recommendations": {{
+            "technical_skills": [
+                {{
+                    "name": "Skill Name",
+                    "training_programs": ["Program 1", "Program 2"],
+                    "certifications": ["Certification 1", "Certification 2"],
+                    "learning_paths": ["Learning Path 1", "Learning Path 2"]
+                }}
+            ],
+            "cognitive_skills": [
+                {{
+                    "name": "Skill Name",
+                    "training_programs": ["Program 1", "Program 2"],
+                    "learning_paths": ["Learning Path 1", "Learning Path 2"]
+                }}
+            ],
+            "soft_skills": [
+                {{
+                    "name": "Skill Name",
+                    "training_programs": ["Program 1", "Program 2"],
+                    "learning_paths": ["Learning Path 1", "Learning Path 2"]
+                }}
+            ]
+        }},
+        "conclusion": "A summary of the key takeaways and next steps for businesses."
+    }}
+
+    ### Output Instructions:
+    - The response **must** be a valid JSON object.
+    - Ensure all elements are well-structured, correctly nested, and formatted for readability.
+    - Use **arrays** where multiple elements exist, such as skills or challenges.
+    - Provide **concise descriptions** for each section.
+    - Use **consistent field names** as specified above.
+    - **DO NOT** generate text output in paragraph format; output must strictly follow the JSON schema.
     """
+
+    report_prompt = report_prompt.format(query=query, trends_data=trends_data, aggregated_data=aggregated_data)
+
     
     try:
-        response = llm.invoke([HumanMessage(content=report_prompt)])
+        response = think_llm.invoke([HumanMessage(content=report_prompt)])
         report = response.content
         logger.info("Report generated successfully.")
         return merge_state(state, {"report": report, "status": "report_generated"})
