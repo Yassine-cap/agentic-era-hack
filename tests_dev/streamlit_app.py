@@ -1,13 +1,14 @@
-import streamlit as st 
-from workflow_agents_HR import WorkforceState, app
 import base64
 import io
-from PIL import Image
-from loguru import logger
-import os
 import json
-import pandas as pd
+import os
 import re
+
+import pandas as pd
+import streamlit as st
+from loguru import logger
+from PIL import Image
+from workflow_agents_HR import WorkforceState, app
 
 st.set_page_config(layout="wide") 
 

@@ -7,24 +7,29 @@ from io import BytesIO
 from typing import Any, Dict, List, Optional, TypedDict
 
 import matplotlib.pyplot as plt
+import numpy as np
 # Data visualization libraries
 import pandas as pd
 import seaborn as sns
-import numpy as np
+from dotenv import load_dotenv
 from langchain_community.tools import TavilySearchResults
 from langchain_core.messages import HumanMessage
 # Use ChatVertexAI instead of ChatOpenAI
 from langchain_google_vertexai import ChatVertexAI
 # LangGraph imports
-from langgraph.graph import START, END, StateGraph
+from langgraph.graph import END, START, StateGraph
+
+load_dotenv()
+
 
 # Set your API keys and project id
-os.environ["TAVILY_API_KEY"] = "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"
-PROJECT_ID = "qwiklabs-gcp-02-2a44d1630c0c"  # Replace with your Google Cloud project ID
+os.environ["TAVILY_API_KEY"] = os.getenv("TAVILY_API_KEY")
+PROJECT_ID = os.getenv("PROJECT_ID")  # Replace with your Google Cloud project ID
 MODEL_ID = "gemini-2.0-flash-001"
 THINKING_MODEL_ID = "gemini-2.0-flash-thinking-exp-01-21"
 # Configure logging
-from loguru import logger 
+from loguru import logger
+
 # logging.basicConfig(level=logging.INFO)
 # logger = logging.getLogger(__name__)
 
