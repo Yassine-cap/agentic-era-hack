@@ -1,4 +1,9 @@
-# hack_agent_genai_vertex
+Onepoint Hackers:
+
+> Charlotte Gosset-Grainville
+> Yassine Boukhari
+> Zainab Berrada
+
 
 A RAG agent using Vertex AI Search and LangGraph for document retrieval and Q&A
 
